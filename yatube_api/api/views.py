@@ -1,11 +1,10 @@
 from rest_framework import viewsets, permissions, filters
-from posts.models import Post, Group, Follow
+from posts.models import Post, Group
 from .serializers import CommentSerializer, FollowSerializer
 from .serializers import PostSerializer, GroupSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from .permissions import IsAuthorOrReadOnly
-from django.core.exceptions import SuspiciousOperation
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -51,9 +50,5 @@ class FollowViewSet(viewsets.ModelViewSet):
         return new_queryset
 
     def perform_create(self, serializer):
-        following = serializer.validated_data['following']
-        f = Follow.objects.filter(user=self.request.user, following=following)
-        if f.count() == 0 and following != self.request.user:
-            serializer.save(user=self.request.user, following=following)
-        else:
-            raise SuspiciousOperation("Ошибка запроса")
+        serializer.save(user=self.request.user,
+                        following=serializer.validated_data['following'])

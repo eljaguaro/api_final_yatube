@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from posts.models import User, Comment, Post, Group, Follow
 from django.core.files.base import ContentFile
+from django.core.exceptions import SuspiciousOperation
 
 
 class Base64ImageField(serializers.ImageField):
@@ -49,3 +50,11 @@ class FollowSerializer(serializers.ModelSerializer):
         fields = ('user', 'following')
         read_only_fields = ('user',)
         model = Follow
+
+    def validate(self, data):
+        following = data['following']
+        user = self.context['request'].user
+        f = Follow.objects.filter(user=user, following=following)
+        if f.count() > 0 or following == user:
+            raise SuspiciousOperation("Ошибка запроса")
+        return data
